@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KnowBot — Chatbot Éducatif Haïtien</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #ffffff;
+            --surface: #f2f2f2;
+            --surface2: #e8e8e8;
+            --border: #e0e0e0;
+            --accent: #d97b00;
+            --accent2: #c0392b;
+            --text: #1a1a1a;
+            --muted: #666666;
+            --user-bubble: #1d3557;
+            --bot-bubble: #f2f2f2;
+            --gray-100: #f2f2f2;
+            --gray-300: #d9d9d9;
+            --gray-600: #7a7a7a;
+            --shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Animated background grain */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: 
+                radial-gradient(ellipse 80% 60% at 20% 0%, rgba(217,123,0,0.06) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 50% at 80% 100%, rgba(192,57,43,0.04) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── HEADER ── */
+        header {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            height: 60px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(12px);
+            box-shadow: var(--shadow);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .logo-text {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.3rem;
+            letter-spacing: -0.02em;
+        }
+
+        .logo-text span {
+            color: var(--accent);
+        }
+
+        .header-badge {
+            font-size: 0.65rem;
+            font-weight: 500;
+            background: rgba(217,123,0,0.1);
+            color: var(--accent);
+            border: 1px solid rgba(217,123,0,0.25);
+            padding: 2px 8px;
+            border-radius: 20px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .header-nav {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-link {
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.875rem;
+            padding: 6px 14px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .nav-link:hover {
+            color: var(--text);
+            background: var(--surface2);
+        }
+
+        .nav-link.primary {
+            background: var(--accent);
+            color: #ffffff;
+            font-weight: 500;
+            border-color: var(--accent);
+        }
+
+        .nav-link.primary:hover {
+            background: #b86800;
+        }
+
+        /* ── LAYOUT ── */
+        .app {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            width: 260px;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            background: rgba(242,242,242,0.85);
+            backdrop-filter: blur(8px);
+            padding: 1.5rem 1rem;
+            gap: 0.5rem;
+            overflow-y: auto;
+        }
+
+        .sidebar-section-title {
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--muted);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 0.5rem 0.5rem 0.25rem;
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0.6rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.18s;
+            border: 1px solid transparent;
+        }
+
+        .sidebar-item:hover {
+            background: var(--gray-300);
+            color: var(--text);
+            border-color: var(--border);
+        }
+
+        .sidebar-item.active {
+            background: rgba(217,123,0,0.1);
+            color: var(--accent);
+            border-color: rgba(217,123,0,0.3);
+        }
+
+        .sidebar-item .icon { font-size: 1rem; width: 20px; text-align: center; }
+
+        .new-chat-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0.65rem 0.75rem;
+            background: var(--accent);
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            margin-bottom: 1rem;
+            transition: all 0.2s;
+            font-family: inherit;
+            width: 100%;
+        }
+
+        .new-chat-btn:hover { background: #b86800; transform: translateY(-1px); }
+
+        .history-item {
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: var(--muted);
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: all 0.18s;
+        }
+
+        .history-item:hover { background: var(--surface2); color: var(--text); }
+
+        /* ── CHAT AREA ── */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            scrollbar-width: thin;
+            scrollbar-color: var(--surface2) transparent;
+        }
+
+        /* Welcome state */
+        .welcome {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            text-align: center;
+            gap: 1rem;
+            padding: 2rem;
+            animation: fadeUp 0.6s ease both;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .welcome-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, rgba(217,123,0,0.15), rgba(192,57,43,0.1));
+            border: 1px solid rgba(217,123,0,0.25);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin-bottom: 0.5rem;
+        }
+
+        .welcome h1 {
+            font-family: 'DM Serif Display', serif;
+            font-size: 2.2rem;
+            font-weight: 400;
+            letter-spacing: -0.03em;
+        }
+
+        .welcome h1 em {
+            font-style: italic;
+            color: var(--accent);
+        }
+
+        .welcome p {
+            color: var(--muted);
+            font-size: 0.95rem;
+            max-width: 420px;
+            line-height: 1.6;
+        }
+
+        .quick-prompts {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            max-width: 700px;
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+
+        .quick-prompt {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            color: var(--text);
+        }
+
+        .quick-prompt:hover {
+            border-color: rgba(217,123,0,0.4);
+            background: rgba(217,123,0,0.06);
+            transform: translateY(-2px);
+        }
+
+        .quick-prompt .qp-label {
+            font-size: 0.8rem;
+            color: var(--accent);
+            font-weight: 500;
+            margin-bottom: 3px;
+        }
+
+        .quick-prompt .qp-text {
+            font-size: 0.82rem;
+            color: var(--muted);
+            line-height: 1.4;
+        }
+
+        /* Messages */
+        .message {
+            display: flex;
+            gap: 12px;
+            animation: fadeUp 0.3s ease both;
+        }
+
+        .message.user { flex-direction: row-reverse; }
+
+        .avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .avatar.bot {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+        }
+
+        .avatar.user {
+            background: var(--user-bubble);
+            border: 1px solid rgba(255,255,255,0.1);
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .bubble {
+            max-width: 68%;
+            padding: 0.85rem 1.1rem;
+            border-radius: 14px;
+            font-size: 0.9rem;
+            line-height: 1.65;
+        }
+
+        .message.bot .bubble {
+            background: var(--gray-100);
+            border: 1px solid var(--border);
+            border-radius: 4px 14px 14px 14px;
+            box-shadow: var(--shadow);
+        }
+
+        .message.user .bubble {
+            background: var(--user-bubble);
+            border: 1px solid rgba(29,53,87,0.5);
+            border-radius: 14px 4px 14px 14px;
+            color: #ffffff;
+        }
+
+        .bubble strong { color: var(--accent); font-weight: 500; }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 0.85rem 1.1rem;
+            background: var(--gray-100);
+            border: 1px solid var(--border);
+            border-radius: 4px 14px 14px 14px;
+            box-shadow: var(--shadow);
+        }
+
+        .typing-dot {
+            width: 6px; height: 6px;
+            background: var(--gray-600);
+            border-radius: 50%;
+            animation: typingBounce 1.2s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingBounce {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+            30% { transform: translateY(-6px); opacity: 1; }
+        }
+
+        /* ── INPUT AREA ── */
+        .input-area {
+            padding: 1rem 2rem 1.5rem;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid var(--border);
+            box-shadow: 0 -4px 16px rgba(0,0,0,0.04);
+        }
+
+        .input-box {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 0.75rem 1rem;
+            transition: border-color 0.2s;
+            box-shadow: var(--shadow);
+        }
+
+        .input-box:focus-within {
+            border-color: rgba(217,123,0,0.5);
+            box-shadow: 0 0 0 3px rgba(217,123,0,0.08);
+        }
+
+        .input-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        .input-row textarea {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.9rem;
+            resize: none;
+            max-height: 140px;
+            min-height: 24px;
+            line-height: 1.5;
+        }
+
+        .input-row textarea::placeholder { color: var(--muted); }
+
+        .send-btn {
+            width: 34px;
+            height: 34px;
+            background: var(--accent);
+            border: none;
+            border-radius: 8px;
+            color: #ffffff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover { background: #b86800; transform: scale(1.05); }
+        .send-btn:disabled { background: var(--gray-300); color: var(--muted); cursor: not-allowed; transform: none; }
+
+        .tool-row {
+            display: flex;
+            gap: 6px;
+            padding-top: 0.6rem;
+            border-top: 1px solid var(--border);
+            margin-top: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        .tool-btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            background: var(--gray-100);
+            border: 1px solid var(--gray-300);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.18s;
+            font-family: inherit;
+        }
+
+        .tool-btn:hover {
+            border-color: rgba(217,123,0,0.4);
+            color: var(--accent);
+            background: rgba(217,123,0,0.06);
+        }
+
+        .input-footer {
+            text-align: center;
+            font-size: 0.7rem;
+            color: var(--muted);
+            margin-top: 0.75rem;
+        }
+
+        /* Markov chain badge */
+        .markov-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(217,123,0,0.08);
+            border: 1px solid rgba(217,123,0,0.2);
+            color: var(--accent);
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-top: 6px;
+        }
+
+        .markov-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 2px; }
+
+        /* ── HAMBURGER BUTTON (mobile only) ── */
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+        .hamburger:hover { background: var(--surface2); }
+        .hamburger span {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: var(--text);
+            border-radius: 2px;
+            transition: all 0.3s;
+        }
+        .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+        .hamburger.open span:nth-child(2) { opacity: 0; }
+        .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+        /* Sidebar overlay sombre (mobile) */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 40;
+            backdrop-filter: blur(2px);
+        }
+        .sidebar-overlay.open { display: block; }
+
+        /* ══ RESPONSIVE ══ */
+
+        /* Tablèt : 768px – 1024px */
+        @media (max-width: 1024px) {
+            .sidebar { width: 220px; padding: 1rem 0.75rem; }
+            .chat-messages { padding: 1.5rem; }
+            .input-area { padding: 0.75rem 1.5rem 1.25rem; }
+            .bubble { max-width: 80%; }
+        }
+
+        /* Telefòn : ≤ 768px */
+        @media (max-width: 768px) {
+
+            /* Header */
+            header { padding: 0 1rem; height: 54px; }
+            .header-badge { display: none; }
+            .logo-text { font-size: 1.1rem; }
+            .hamburger { display: flex; }
+
+            /* Sidebar : cachée par défaut, slide depuis gauche */
+            .sidebar {
+                position: fixed;
+                top: 54px;
+                left: 0;
+                bottom: 0;
+                width: 280px;
+                z-index: 50;
+                transform: translateX(-100%);
+                transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+                border-right: 1px solid var(--border);
+                box-shadow: 4px 0 24px rgba(0,0,0,0.1);
+                background: #ffffff;
+            }
+            .sidebar.open { transform: translateX(0); }
+
+            /* Chat prend toute la largeur */
+            .app { flex-direction: column; }
+            .chat-messages { padding: 1rem; gap: 1rem; }
+
+            .bubble {
+                max-width: 88%;
+                font-size: 0.85rem;
+                padding: 0.7rem 0.9rem;
+            }
+
+            /* Welcome screen */
+            .welcome { padding: 1.25rem 1rem; gap: 0.75rem; }
+            .welcome h1 { font-size: 1.6rem; }
+            .welcome p  { font-size: 0.85rem; }
+            .welcome-icon { width: 52px; height: 52px; font-size: 22px; }
+            .quick-prompts { grid-template-columns: 1fr; max-width: 100%; }
+
+            /* Input */
+            .input-area { padding: 0.6rem 0.85rem 1rem; }
+            .tool-btn { font-size: 0.7rem; padding: 3px 8px; }
+            .tool-btn:nth-child(4),
+            .tool-btn:nth-child(5) { display: none; }
+            .input-footer { font-size: 0.62rem; }
+
+            /* Nav */
+            .nav-link { font-size: 0.78rem; padding: 5px 10px; }
+        }
+
+        /* Très petit : ≤ 400px */
+        @media (max-width: 400px) {
+            .welcome h1 { font-size: 1.3rem; }
+            .bubble { max-width: 95%; }
+            .nav-link:not(.primary) { display: none; }
+            .logo-text { font-size: 1rem; }
+        }
+
+        /* File upload hidden */
+        .file-input { display: none; }
+
+        /* Modal overlay */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.open { display: flex; }
+
+        .modal {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 420px;
+            width: 90%;
+            animation: fadeUp 0.3s ease;
+            box-shadow: 0 1rem 3rem rgba(0,0,0,0.12);
+        }
+
+        .modal h2 {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .modal p {
+            color: var(--muted);
+            font-size: 0.875rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group { margin-bottom: 1rem; }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .form-group input {
+            width: 100%;
+            background: var(--gray-100);
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            padding: 0.65rem 0.85rem;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus { border-color: rgba(217,123,0,0.5); box-shadow: 0 0 0 3px rgba(217,123,0,0.08); }
+
+        .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1.5rem; }
+
+        .btn-modal {
+            padding: 0.6rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn-modal.cancel { background: var(--gray-100); color: var(--muted); border: 1px solid var(--gray-300); }
+        .btn-modal.cancel:hover { background: var(--gray-300); }
+        .btn-modal.confirm { background: var(--accent); color: #ffffff; font-weight: 500; }
+        .btn-modal.confirm:hover { background: #b86800; }
+
+        /* ── FIX #2 : modal-error ── */
+        .modal-error {
+            background: rgba(192,57,43,0.08); border: 1px solid rgba(192,57,43,0.3);
+            color: #c0392b; font-size: 0.82rem; padding: 8px 12px;
+            border-radius: 6px; margin-bottom: 1rem; display: none;
+        }
+        .modal-error.visible { display: block; }
+        .modal-loading { opacity: 0.6; pointer-events: none; }
+
+        /* ── FIX #3 : badge bientôt ── */
+        .badge-soon {
+            margin-left: auto; font-size: 0.6rem;
+            background: var(--gray-300); color: var(--gray-600);
+            padding: 1px 6px; border-radius: 10px;
+        }
+
+        /* ── FIX #4 : historique dynamique ── */
+        .history-list { display: flex; flex-direction: column; gap: 2px; }
+        .history-empty { font-size: 0.75rem; color: var(--muted); padding: 0.5rem 0.75rem; font-style: italic; }
+
+        /* ── FIX #5 : mode indicator ── */
+        .mode-indicator {
+            font-size: 0.72rem; color: var(--accent);
+            background: rgba(217,123,0,0.08); border: 1px solid rgba(217,123,0,0.2);
+            padding: 4px 10px; border-radius: 20px;
+            text-align: center; margin-bottom: 0.25rem;
+        }
+
+        /* ── FIX #7 : tool-btn actif ── */
+        .tool-btn.active-tool {
+            border-color: var(--accent); color: var(--accent);
+            background: rgba(217,123,0,0.1);
+        }
+
+        /* ── FIX #9 : user-info header ── */
+        .user-info { display: none; align-items: center; gap: 8px; font-size: 0.875rem; }
+        .user-info.visible { display: flex; }
+        .user-avatar-small {
+            width: 28px; height: 28px; background: var(--accent);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 0.75rem; font-weight: 600;
+        }
+        .logout-btn {
+            font-size: 0.78rem; color: var(--muted); background: none;
+            border: none; cursor: pointer; padding: 4px 8px;
+            border-radius: 4px; transition: all 0.2s;
+        }
+        .logout-btn:hover { background: var(--surface2); color: var(--text); }
+
+        /* ── FIX #9 : couleur strong dans boul itilizatè ── */
+        .message.user .bubble strong { color: #ffd699; font-weight: 500; }
+        .message.user .bubble em { color: #c8d8f0; }
+        .message.bot .bubble strong { color: var(--accent); font-weight: 500; }
+
+        /* ── TOAST ── */
+        .toast {
+            position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px);
+            background: #1a1a1a; color: #fff; padding: 10px 20px;
+            border-radius: 8px; font-size: 0.85rem; opacity: 0;
+            transition: all 0.3s; z-index: 200; pointer-events: none;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .toast.error { background: #c0392b; }
+        .toast.success { background: #2e7d32; }
+    </style>
+</head>
+<body>
+<div id="toast" class="toast"></div>
+
+<!-- Login Modal -->
+<div class="modal-overlay" id="loginModal">
+    <div class="modal">
+        <h2>Connexion</h2>
+        <p>Accédez à votre espace d'apprentissage.</p>
+        <div class="modal-error" id="loginError"></div>
+        <div class="form-group">
+            <label>Adresse e-mail</label>
+            <input type="email" id="loginEmail" placeholder="vous@exemple.com">
+        </div>
+        <div class="form-group">
+            <label>Mot de passe</label>
+            <input type="password" id="loginPassword" placeholder="••••••••"
+                   onkeydown="if(event.key==='Enter') doLogin()">
+        </div>
+        <div class="modal-actions">
+            <button class="btn-modal cancel" onclick="closeModal('loginModal')">Annuler</button>
+            <button class="btn-modal confirm" id="loginBtn" onclick="doLogin()">Se connecter</button>
+        </div>
+    </div>
+</div>
+
+<!-- Signup Modal -->
+<div class="modal-overlay" id="signupModal">
+    <div class="modal">
+        <h2>Créer un compte</h2>
+        <p>Rejoignez la plateforme d'apprentissage intelligente.</p>
+        <div class="modal-error" id="signupError"></div>
+        <div class="form-group">
+            <label>Nom complet</label>
+            <input type="text" id="signupNom" placeholder="Jean Dupont">
+        </div>
+        <div class="form-group">
+            <label>Adresse e-mail</label>
+            <input type="email" id="signupEmail" placeholder="vous@exemple.com">
+        </div>
+        <div class="form-group">
+            <label>Mot de passe</label>
+            <input type="password" id="signupPassword" placeholder="••••••••"
+                   onkeydown="if(event.key==='Enter') doSignup()">
+        </div>
+        <div class="modal-actions">
+            <button class="btn-modal cancel" onclick="closeModal('signupModal')">Annuler</button>
+            <button class="btn-modal confirm" id="signupBtn" onclick="doSignup()">S'inscrire</button>
+        </div>
+    </div>
+</div>
+
+<!-- Overlay sombre deye sidebar sou mobil -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<header>
+    <div style="display:flex; align-items:center; gap:10px;">
+        <!-- Bouton hamburger (mobil sèlman) -->
+        <button class="hamburger" id="hamburger" onclick="toggleSidebar()" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="logo">
+            <div class="logo-icon">📚</div>
+            <span class="logo-text">Know<span>Bot</span></span>
+            <span class="header-badge">Éducation · Haïti</span>
+        </div>
+    </div>
+    <div class="header-nav">
+        <div class="user-info" id="userInfo">
+            <div class="user-avatar-small" id="userInitial">?</div>
+            <span id="userName"></span>
+            <button class="logout-btn" onclick="doLogout()">Déconnexion</button>
+        </div>
+        <div id="authButtons">
+            <a href="#" class="nav-link" onclick="openModal('loginModal'); return false;">Connexion</a>
+            <a href="#" class="nav-link primary" onclick="openModal('signupModal'); return false;">S'inscrire</a>
+        </div>
+    </div>
+</header>
+
+<div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <button class="new-chat-btn" onclick="newChat()">
+            <span>✏️</span> Nouvelle conversation
+        </button>
+
+        <div class="mode-indicator" id="modeIndicator">💬 Mode : Chat IA</div>
+        <div class="sidebar-section-title">Navigation</div>
+        <div class="sidebar-item active" onclick="setActive(this); setMode('chat')">
+            <span class="icon">💬</span> Chat IA
+        </div>
+        <div class="sidebar-item" onclick="setActive(this); setMode('search')">
+            <span class="icon">🔍</span> Recherche
+        </div>
+        <div class="sidebar-item" onclick="setActive(this); setMode('study')">
+            <span class="icon">📖</span> Mode étude
+        </div>
+        <div class="sidebar-item" onclick="showToast('Fonctionnalité bientôt disponible !', 'error')">
+            <span class="icon">🖼️</span> Créer image
+            <span class="badge-soon">Bientôt</span>
+        </div>
+        <div class="sidebar-item" onclick="setActive(this); setMode('improve')">
+            <span class="icon">✨</span> Améliorer texte
+        </div>
+        <div class="sidebar-item" onclick="showToast('Fonctionnalité bientôt disponible !', 'error')">
+            <span class="icon">🎙️</span> Voix
+            <span class="badge-soon">Bientôt</span>
+        </div>
+
+        <div class="sidebar-section-title" style="margin-top:1rem;">Historique récent</div>
+        <div class="history-list" id="historyList">
+            <div class="history-empty">Aucune conversation encore.</div>
+        </div>
+    </aside>
+
+    <!-- Chat -->
+    <div class="chat-container">
+        <div class="chat-messages" id="chatMessages">
+            <!-- Welcome Screen -->
+            <div class="welcome" id="welcomeScreen">
+                <div class="welcome-icon">🎓</div>
+                <h1>Comment puis-je<br><em>vous aider ?</em></h1>
+                <p>Votre assistant intelligent pour apprendre les mathématiques, l'histoire, la géographie, les sciences, l'économie et bien plus encore.</p>
+                <div class="quick-prompts">
+                    <button class="quick-prompt" onclick="sendQuick('Explique-moi les lois de Newton')">
+                        <div class="qp-label">⚗️ Sciences</div>
+                        <div class="qp-text">Explique les lois de Newton</div>
+                    </button>
+                    <button class="quick-prompt" onclick="sendQuick('Aide-moi à réviser les fractions pour mon examen')">
+                        <div class="qp-label">📐 Mathématiques</div>
+                        <div class="qp-text">Aide-moi à réviser les fractions</div>
+                    </button>
+                    <button class="quick-prompt" onclick="sendQuick('Quelles sont les capitales des départements d\'Haïti ?')">
+                        <div class="qp-label">🗺️ Géographie</div>
+                        <div class="qp-text">Capitales des départements d'Haïti</div>
+                    </button>
+                    <button class="quick-prompt" onclick="sendQuick('Explique la Révolution haïtienne et la bataille de Vertières')">
+                        <div class="qp-label">📜 Histoire</div>
+                        <div class="qp-text">La Révolution haïtienne et Vertières</div>
+                    </button>
+                    <button class="quick-prompt" onclick="sendQuick('Pourquoi l\'inflation augmente en Haïti et comment ça affecte l\'économie ?')">
+                        <div class="qp-label">💰 Économie</div>
+                        <div class="qp-text">L'inflation en Haïti et ses effets</div>
+                    </button>
+                    <button class="quick-prompt" onclick="sendQuick('Comment fonctionne le système politique et la démocratie en Haïti ?')">
+                        <div class="qp-label">🏛️ Politique</div>
+                        <div class="qp-text">Le système politique haïtien</div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-area">
+            <div class="input-box">
+                <div class="input-row">
+                    <textarea 
+                        id="userInput" 
+                        placeholder="Posez votre question…" 
+                        rows="1"
+                        onkeydown="handleKey(event)"
+                        oninput="autoResize(this)"
+                    ></textarea>
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </button>
+                </div>
+                <div class="tool-row">
+                    <button class="tool-btn" onclick="triggerFile()">📎 Joindre</button>
+                    <button class="tool-btn" onclick="setModeFromTool('search', this)">🔍 Recherche</button>
+                    <button class="tool-btn" onclick="setModeFromTool('study', this)">📖 Mode étude</button>
+                    <button class="tool-btn" onclick="setModeFromTool('improve', this)">✨ Améliorer</button>
+                    <button class="tool-btn" onclick="showToast('Voix bientôt disponible !', 'error')">🎙️ Voix</button>
+                    <input type="file" id="fileInput" class="file-input" onchange="handleFile(this)">
+                </div>
+            </div>
+            <div class="input-footer">
+                En utilisant KnowBot, vous acceptez nos <a href="#" style="color: var(--accent); text-decoration: none;">Conditions d'utilisation</a> et notre <a href="#" style="color: var(--accent); text-decoration: none;">Politique de confidentialité</a>.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ══════════════════════════════════════════════════════
+    //  CONNEXION AU BACKEND PHP
+    //  Chaque fonction appelle le fichier PHP correspondant
+    //  via fetch() et affiche la réponse dans le chat.
+    // ══════════════════════════════════════════════════════
+
+    function formatText(text) {
+        return text
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/\n/g, '<br>');
+    }
+
+    let chatStarted = false;
+    let currentMode = 'chat'; // 'chat' | 'search' | 'study' | 'improve'
+
+    // ── Définir le mode actif depuis la sidebar ──
+    function setMode(mode) {
+        currentMode = mode;
+    }
+
+    function sendMessage() {
+        const input = document.getElementById('userInput');
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = '';
+        input.style.height = 'auto';
+        doSend(text);
+    }
+
+    function sendQuick(text) {
+        doSend(text);
+    }
+
+    // ── Fonction principale : envoie au bon fichier PHP selon le mode ──
+    async function doSend(text) {
+        if (!chatStarted) {
+            document.getElementById('welcomeScreen')?.remove();
+            chatStarted = true;
+        }
+
+        appendMessage('user', text);
+
+        const typingId = 'typing-' + Date.now();
+        appendTyping(typingId);
+
+        try {
+            let response;
+
+            if (currentMode === 'search') {
+                // ── search.php : recherche dans la base de connaissances ──
+                response = await callPHP('search.php', { query: text });
+
+            } else if (currentMode === 'study') {
+                // ── study.php : génère quiz / fiche de révision ──
+                response = await callPHP('study.php', { topic: text });
+
+            } else if (currentMode === 'improve') {
+                // ── improve.php : améliore le texte fourni ──
+                response = await callPHP('improve.php', { text: text });
+
+            } else {
+                // ── chat.php (mode par défaut) : moteur IA éducatif ──
+                response = await callPHP('chat.php', { message: text });
+            }
+
+            document.getElementById(typingId)?.remove();
+            appendMessage('bot', response);
+
+        } catch (error) {
+            document.getElementById(typingId)?.remove();
+            appendMessage('bot', `⚠️ **Erreur de connexion au serveur.**\n\nVérifiez que le fichier PHP est accessible.\n\n_Détail : ${error.message}_`);
+        }
+    }
+
+    // ── Appel générique vers un fichier PHP via POST ──
+    async function callPHP(endpoint, data) {
+        const formData = new FormData();
+        for (const [key, value] of Object.entries(data)) {
+            formData.append(key, value);
+        }
+
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status} — ${endpoint}`);
+        }
+
+        const json = await res.json();
+
+        // Tous les fichiers PHP retournent : { "response": "..." }
+        if (json.error) throw new Error(json.error);
+        return json.response;
+    }
+
+    // ── Upload de fichier vers attach.php ──
+    async function handleFile(input) {
+        if (!input.files[0]) return;
+        const file = input.files[0];
+
+        if (!chatStarted) {
+            document.getElementById('welcomeScreen')?.remove();
+            chatStarted = true;
+        }
+
+        appendMessage('user', `📎 Fichier joint : **${file.name}**`);
+        const typingId = 'typing-' + Date.now();
+        appendTyping(typingId);
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const res = await fetch('attach.php', { method: 'POST', body: formData });
+            const json = await res.json();
+            document.getElementById(typingId)?.remove();
+            appendMessage('bot', json.response || json.error || 'Fichier reçu.');
+        } catch (e) {
+            document.getElementById(typingId)?.remove();
+            appendMessage('bot', `⚠️ Erreur upload : ${e.message}`);
+        }
+    }
+
+    function appendMessage(role, text) {
+        const container = document.getElementById('chatMessages');
+        const div = document.createElement('div');
+        div.className = `message ${role}`;
+        div.innerHTML = `
+            <div class="avatar ${role}">${role === 'bot' ? '🎓' : '👤'}</div>
+            <div class="bubble">
+                ${formatText(text)}
+                ${role === 'bot' ? '<div class="markov-badge"><div class="markov-dot"></div>KnowBot IA · Éducation Haïti</div>' : ''}
+            </div>`;
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function appendTyping(id) {
+        const container = document.getElementById('chatMessages');
+        const div = document.createElement('div');
+        div.className = 'message bot';
+        div.id = id;
+        div.innerHTML = `
+            <div class="avatar bot">🎓</div>
+            <div class="typing-indicator">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>`;
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function handleKey(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    }
+
+    function autoResize(el) {
+        el.style.height = 'auto';
+        el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+    }
+
+    function newChat() {
+        const container = document.getElementById('chatMessages');
+        container.innerHTML = '';
+        chatStarted = false;
+        const welcome = document.createElement('div');
+        welcome.className = 'welcome';
+        welcome.id = 'welcomeScreen';
+        welcome.innerHTML = `
+            <div class="welcome-icon">🎓</div>
+            <h1>Comment puis-je<br><em>vous aider ?</em></h1>
+            <p>Votre assistant intelligent pour apprendre les mathématiques, l'histoire, la géographie, les sciences, l'économie et bien plus encore.</p>
+            <div class="quick-prompts">
+                <button class="quick-prompt" onclick="sendQuick('Explique-moi la loi de Newton en créole haïtien')">
+                    <div class="qp-label">⚗️ Sciences</div>
+                    <div class="qp-text">Explique la loi de Newton en créole haïtien</div>
+                </button>
+                <button class="quick-prompt" onclick="sendQuick('Aide-moi à réviser les fractions pour mon examen')">
+                    <div class="qp-label">📐 Mathématiques</div>
+                    <div class="qp-text">Aide-moi à réviser les fractions</div>
+                </button>
+                <button class="quick-prompt" onclick="sendQuick('Quelles sont les capitales des départements d\\'Haïti ?')">
+                    <div class="qp-label">🗺️ Géographie</div>
+                    <div class="qp-text">Capitales des départements d'Haïti</div>
+                </button>
+                <div class="quick-prompts">
+                    <button class="quick-prompt" onclick="sendQuick('Explique-moi les lois de Newton')">
+                        <div class="qp-label">⚗️ Sciences</div>
+                        <div class="qp-text">Explique les lois de Newton</div>
+                    </button>
+                    <button class="quick-prompt" onclick="sendQuick('Aide-moi à réviser les fractions pour mon examen')">
+                        <div class="qp-label">📐 Mathématiques</div>
+                        <div class="qp-text">Aide-moi à réviser les fractions</div>
+                    </button>
+                    <button class="quick-prompt" onclick="sendQuick('Quelles sont les capitales des départements d\\'Haïti ?')">
+                        <div class="qp-label">🗺️ Géographie</div>
+                        <div class="qp-text">Capitales des départements d'Haïti</div>
+                    </button>
+                    <button class="quick-prompt" onclick="sendQuick('Explique la Révolution haïtienne et la bataille de Vertières')">
+                        <div class="qp-label">📜 Histoire</div>
+                        <div class="qp-text">La Révolution haïtienne et Vertières</div>
+                    </button>
+                    <button class="quick-prompt" onclick="sendQuick('Pourquoi l\\'inflation augmente en Haïti et comment ça affecte l\\'économie ?')">
+                        <div class="qp-label">💰 Économie</div>
+                        <div class="qp-text">L'inflation en Haïti et ses effets</div>
+                    </button>
+                    <button class="quick-prompt" onclick="sendQuick('Comment fonctionne le système politique et la démocratie en Haïti ?')">
+                        <div class="qp-label">🏛️ Politique</div>
+                        <div class="qp-text">Le système politique haïtien</div>
+                    </button>
+                </div>`;
+        container.appendChild(welcome);
+    }
+
+    // ── Sidebar mobile (hamburger) ──
+    function toggleSidebar() {
+        const sidebar  = document.querySelector('.sidebar');
+        const overlay  = document.getElementById('sidebarOverlay');
+        const hamburger = document.getElementById('hamburger');
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('open');
+        hamburger.classList.toggle('open');
+    }
+
+    function closeSidebar() {
+        document.querySelector('.sidebar').classList.remove('open');
+        document.getElementById('sidebarOverlay').classList.remove('open');
+        document.getElementById('hamburger').classList.remove('open');
+    }
+
+    function setActive(el) {
+        document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+        el.classList.add('active');
+        // Ferme sidebar automatikman sou mobil apre klike
+        if (window.innerWidth <= 768) closeSidebar();
+    }
+
+    function triggerFile() {
+        document.getElementById('fileInput').click();
+    }
+
+    // FIX #1 : handleFile unique — version async définie plus haut
+
+    function openModal(id) {
+        document.getElementById(id).classList.add('open');
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('open');
+    }
+
+    // Close modal on overlay click
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', e => {
+            if (e.target === overlay) overlay.classList.remove('open');
+        });
+    });
+
+    // ══════════════════════════════════════════════════════
+    //  FIX #6 : Sanitization XSS
+    // ══════════════════════════════════════════════════════
+    function sanitize(str) {
+        const d = document.createElement('div');
+        d.textContent = str;
+        return d.innerHTML;
+    }
+
+    // Remplacer formatText pour inclure sanitization
+    const _origFormatText = formatText;
+    function formatText(text) {
+        const safe = sanitize(String(text));
+        return safe
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g,       '<em>$1</em>')
+            .replace(/_(.*?)_/g,           '<em>$1</em>')
+            .replace(/\n/g, '<br>');
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  FIX #5 : gestion mode + indicateur
+    // ══════════════════════════════════════════════════════
+    const _modeLabels = {
+        chat:    '💬 Mode : Chat IA',
+        search:  '🔍 Mode : Recherche',
+        study:   '📖 Mode : Étude',
+        improve: '✨ Mode : Améliorer texte',
+    };
+    const _origSetMode = setMode;
+    function setMode(mode) {
+        currentMode = mode;
+        const ind = document.getElementById('modeIndicator');
+        if (ind) ind.textContent = _modeLabels[mode] || '💬 Mode : Chat IA';
+        const placeholders = {
+            chat:    'Posez votre question…',
+            search:  'Recherchez dans la base de connaissances…',
+            study:   'Entrez un sujet (ex: fraction, Newton, Haïti)…',
+            improve: 'Collez le texte à améliorer…',
+        };
+        const ta = document.getElementById('userInput');
+        if (ta) ta.placeholder = placeholders[mode] || 'Posez votre question…';
+    }
+
+    // ── FIX #7 : tool-row boutons ──
+    function setModeFromTool(mode, btn) {
+        setMode(mode);
+        document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active-tool'));
+        btn.classList.add('active-tool');
+        document.querySelectorAll('.sidebar-item').forEach(item => {
+            item.classList.remove('active');
+            const oc = item.getAttribute('onclick') || '';
+            if (oc.includes("'" + mode + "'")) item.classList.add('active');
+        });
+        document.getElementById('userInput').focus();
+    }
+
+    // ── FIX #4 : historique dynamique ──
+    let _chatHistory = [];
+    function _addToHistory(question) {
+        _chatHistory.unshift(question);
+        if (_chatHistory.length > 10) _chatHistory.pop();
+        const list = document.getElementById('historyList');
+        if (!list) return;
+        list.innerHTML = _chatHistory.map(q =>
+            '<div class="history-item" title="' + sanitize(q) + '">' +
+            sanitize(q.substring(0, 45)) + (q.length > 45 ? '…' : '') + '</div>'
+        ).join('');
+    }
+
+    // ── TOAST ──
+    function showToast(msg, type) {
+        const t = document.getElementById('toast');
+        if (!t) return;
+        t.textContent = msg;
+        t.className = 'toast' + (type ? ' ' + type : '');
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    // ── Patch doSend pou ajoute nan historik ──
+    const _origDoSend = doSend;
+    async function doSend(text) {
+        _addToHistory(text);
+        await _origDoSend(text);
+    }
+
+    // ── FIX #5 : newChat remet mode ──
+    const _origNewChat = newChat;
+    function newChat() {
+        _origNewChat();
+        setMode('chat');
+        document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active-tool'));
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  FIX #2 : Authentification connectée au PHP
+    // ══════════════════════════════════════════════════════
+    let _currentUser = null;
+
+    async function doLogin() {
+        const email    = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        const errDiv   = document.getElementById('loginError');
+        const btn      = document.getElementById('loginBtn');
+        errDiv.classList.remove('visible');
+        if (!email || !password) { errDiv.textContent = 'Veuillez remplir tous les champs.'; errDiv.classList.add('visible'); return; }
+        btn.textContent = 'Connexion…'; btn.disabled = true;
+        try {
+            const response = await callPHP('login.php', { email, password });
+            const nom = response.match(/Bienvenue[,\s]+\*\*(.+?)\*\*/)?.[1] || email.split('@')[0];
+            _setUser({ nom, email });
+            closeModal('loginModal');
+            showToast('Bienvenue ' + nom + ' ! 🎓', 'success');
+            if (!chatStarted) { document.getElementById('welcomeScreen')?.remove(); chatStarted = true; }
+            appendMessage('bot', response);
+        } catch (e) { errDiv.textContent = e.message; errDiv.classList.add('visible'); }
+        finally { btn.textContent = 'Se connecter'; btn.disabled = false; }
+    }
+
+    async function doSignup() {
+        const nom      = document.getElementById('signupNom').value.trim();
+        const email    = document.getElementById('signupEmail').value.trim();
+        const password = document.getElementById('signupPassword').value;
+        const errDiv   = document.getElementById('signupError');
+        const btn      = document.getElementById('signupBtn');
+        errDiv.classList.remove('visible');
+        if (!nom || !email || !password) { errDiv.textContent = 'Veuillez remplir tous les champs.'; errDiv.classList.add('visible'); return; }
+        if (password.length < 6) { errDiv.textContent = 'Mot de passe : 6 caractères minimum.'; errDiv.classList.add('visible'); return; }
+        btn.textContent = 'Inscription…'; btn.disabled = true;
+        try {
+            const response = await callPHP('signup.php', { nom, email, password });
+            _setUser({ nom, email });
+            closeModal('signupModal');
+            showToast('Compte créé ! Bienvenue ' + nom + ' 🎓', 'success');
+            if (!chatStarted) { document.getElementById('welcomeScreen')?.remove(); chatStarted = true; }
+            appendMessage('bot', response);
+        } catch (e) { errDiv.textContent = e.message; errDiv.classList.add('visible'); }
+        finally { btn.textContent = "S'inscrire"; btn.disabled = false; }
+    }
+
+    function _setUser(user) {
+        _currentUser = user;
+        document.getElementById('userInfo').classList.add('visible');
+        document.getElementById('authButtons').style.display = 'none';
+        document.getElementById('userName').textContent = user.nom;
+        document.getElementById('userInitial').textContent = user.nom.charAt(0).toUpperCase();
+    }
+
+    function doLogout() {
+        _currentUser = null;
+        document.getElementById('userInfo').classList.remove('visible');
+        document.getElementById('authButtons').style.display = '';
+        showToast('Vous êtes déconnecté.');
+        newChat();
+    }
+
+    // ── Inject toast div si absent ──
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!document.getElementById('toast')) {
+            const t = document.createElement('div');
+            t.id = 'toast'; t.className = 'toast';
+            document.body.appendChild(t);
+        }
+    });
+
+</script>
+</body>
+</html>
